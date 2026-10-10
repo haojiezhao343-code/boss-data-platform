@@ -1,0 +1,48 @@
+logging:
+  file:
+    enable: true
+    level: INFO
+    path: logs
+    rotation: "10 MB"
+    retention: "7 days"
+  console:
+    enable: true
+    level: INFO
+
+db_meta:
+  host: localhost
+  port: 23306
+  # 用户名/密码已外移至 .env（MYSQL_USER / MYSQL_PASSWORD 环境变量优先）
+  user: itwwy
+  password: your-mysql-password
+  database: meta
+
+db_dw:
+  host: localhost
+  port: 23306
+  user: itwwy
+  password: your-mysql-password
+  database: dw
+
+qdrant:
+  host: localhost
+  port: 6333
+  embedding_size: 1024
+
+embedding:
+  host: localhost
+  port: 19081
+  model: BAAI/bge-large-zh-v1.5
+
+
+es:
+  host: localhost
+  port: 19200
+  index_name: data_agent
+
+
+llm:
+  model_name: deepseek-v4-flash-202605
+  # API Key 已外移至 .env（DA_LLM_API_KEY 环境变量优先，此占位仅作回落默认值）
+  api_key: sk-your-da-api-key-here
+  base_url: https://api.lkeap.cloud.tencent.com/plan/v3

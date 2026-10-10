@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>审核管理 · BOSS数智平台</title>
+  <style>
+    :root{
+      --c-ink:#0f172a; --c-text:#334155; --c-muted:#64748b; --c-faint:#94a3b8;
+      --c-brand:#2563eb; --c-brand-dark:#1d4ed8; --c-brand-light:#eff6ff;
+      --c-bg:#f8fafc; --c-panel:#ffffff; --c-border:#e2e8f0; --c-border-strong:#cbd5e1;
+      --c-hover:#f1f5f9; --c-success:#16a34a; --c-warn:#d97706; --c-danger:#dc2626;
+      --radius:10px; --radius-sm:6px;
+      --shadow-sm:0 1px 2px rgba(15,23,42,.04);
+      --shadow:0 1px 3px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.07);
+      --t:.2s ease;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+      background:var(--c-bg);color:var(--c-text);
+      -webkit-font-smoothing:antialiased;
+      padding:24px 20px 60px;
+    }
+    .wrap{max-width:1080px;margin:0 auto}
+    /* ===== 顶栏 ===== */
+    .topbar{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+    .logo{width:38px;height:38px;border-radius:var(--radius-sm);background:var(--c-brand);
+      display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+    .title strong{display:block;font-size:17px;color:var(--c-ink)}
+    .title span{font-size:12px;color:var(--c-muted)}
+    .nav{margin-left:auto;display:flex;gap:8px}
+    .nav a{
+      font-size:13px;color:var(--c-text);text-decoration:none;border:1px solid var(--c-border-strong);
+      padding:7px 14px;border-radius:var(--radius-sm);background:var(--c-panel);transition:var(--t);
+    }
+    .nav a:hover{border-color:var(--c-brand);color:var(--c-brand)}
+    .nav a.active{background:var(--c-brand);border-color:var(--c-brand);color:#fff}
+    /* ===== 统计卡片 ===== */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+    .card{background:var(--c-panel);border:1px solid var(--c-border);border-radius:var(--radius);
+      padding:16px 18px;box-shadow:var(--shadow-sm)}
+    .card .k{font-size:12px;color:var(--c-muted)}
+    .card .v{font-size:26px;font-weight:700;color:var(--c-ink);margin-top:4px}
+    .card.warn .v{color:var(--c-warn)} .card.ok .v{color:var(--c-success)} .card.bad .v{color:var(--c-danger)}
+    /* ===== 工具条 ===== */
+    .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+    .toolbar h2{font-size:15px;color:var(--c-ink);font-weight:700}
+    .toolbar .spacer{flex:1}
+    .btn{
+      border:1px solid var(--c-border-strong);background:var(--c-panel);color:var(--c-text);
+      font-size:13px;padding:8px 16px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--t);
+    }
+    .btn:hover{border-color:var(--c-brand);color:var(--c-brand)}
+    .btn.primary{background:var(--c-brand);border-color:var(--c-brand);color:#fff}
+    .btn.primary:hover{background:var(--c-brand-dark)}
+    .btn.success{color:var(--c-success);border-color:#bbf7d0}
+    .btn.success:hover{background:#f0fdf4;border-color:var(--c-success)}
+    .btn.danger{color:var(--c-danger);border-color:#fecaca}
+    .btn.danger:hover{background:#fef2f2;border-color:var(--c-danger)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    /* ===== 审核卡片列表 ===== */
+    .list{display:flex;flex-direction:column;gap:12px}
+    .item{background:var(--c-panel);border:1px solid var(--c-border);border-radius:var(--radius);
+      padding:16px 18px;box-shadow:var(--shadow-sm)}
+    .item-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .fname{font-size:14px;font-weight:700;color:var(--c-ink)}
+    .badge{font-size:11px;padding:3px 10px;border-radius:999px;font-weight:600}
+    .badge.medium{background:#fef3c7;color:#92400e}
+    .badge.high{background:#fee2e2;color:#991b1b}
+    .badge.approved{background:#dcfce7;color:#166534}
+    .badge.rejected{background:#fee2e2;color:#991b1b}
+    .badge.pending{background:#fef3c7;color:#92400e}
+    .rid{font-size:12px;color:var(--c-faint);font-family:ui-monospace,monospace}
+    .time{margin-left:auto;font-size:12px;color:var(--c-faint)}
+    .findings{margin:10px 0 0;display:flex;flex-direction:column;gap:6px}
+    .findings li{list-style:none;font-size:13px;color:var(--c-text);line-height:1.5;
+      padding:8px 12px;background:var(--c-bg);border-radius:var(--radius-sm)}
+    .findings li.llm{border-left:3px solid var(--c-brand)}
+    .findings li.rule{border-left:3px solid var(--c-warn)}
+    .summary{margin-top:8px;font-size:12px;color:var(--c-muted)}
+    .actions{display:flex;gap:8px;margin-top:14px;align-items:center}
+    .actions input{flex:1;max-width:180px;font-size:13px;padding:8px 10px;
+      border:1px solid var(--c-border-strong);border-radius:var(--radius-sm)}
+    .actions .note{flex:2;max-width:340px}
+    .empty{background:var(--c-panel);border:1px dashed var(--c-border-strong);border-radius:var(--radius);
+      padding:48px;text-align:center;color:var(--c-faint);font-size:14px}
+    /* ===== 审计日志 ===== */
+    section.block{margin-top:28px}
+    section.block h2{font-size:15px;color:var(--c-ink);font-weight:700;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;background:var(--c-panel);border:1px solid var(--c-border);
+      border-radius:var(--radius);overflow:hidden;font-size:12.5px}
+    th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--c-border)}
+    th{background:var(--c-bg);color:var(--c-muted);font-weight:600}
+    td.tag-ok{color:var(--c-success);font-weight:600}
+    td.tag-no{color:var(--c-danger);font-weight:600}
+    .toast{
+      position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+      background:var(--c-ink);color:#fff;font-size:13px;padding:10px 20px;border-radius:999px;
+      opacity:0;pointer-events:none;transition:.3s;
+    }
+    .toast.show{opacity:.95}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="logo">审</div>
+    <div class="title">
+      <strong>人工审核管理</strong>
+      <span>BOSS数智平台 · 审查第三道防线（HITL）</span>
+    </div>
+    <nav class="nav">
+      <a href="/import.html">文档导入</a>
+      <a href="/chat.html">知识问答</a>
+      <a href="/review.html" class="active">审核管理</a>
+    </nav>
+  </div>
+
+  <div class="stats">
+    <div class="card warn"><div class="k">待人工审核</div><div class="v" id="stPending">-</div></div>
+    <div class="card ok"><div class="k">已通过</div><div class="v" id="stApproved">-</div></div>
+    <div class="card bad"><div class="k">已驳回</div><div class="v" id="stRejected">-</div></div>
+    <div class="card"><div class="k">审查总计</div><div class="v" id="stTotal">-</div></div>
+  </div>
+
+  <div class="toolbar">
+    <h2>审核队列</h2>
+    <div class="spacer"></div>
+    <button class="btn success" id="btnBatch" onclick="batchApprove()">批量通过全部待审</button>
+    <button class="btn" onclick="loadAll()">刷新</button>
+  </div>
+  <div class="list" id="queueList"><div class="empty">加载中...</div></div>
+
+  <section class="block">
+    <h2>最近审查审计日志（内存最近 50 条）</h2>
+    <table>
+      <thead><tr><th>时间</th><th>类型</th><th>动作</th><th>对象</th><th>结果</th><th>风险</th><th>原因</th></tr></thead>
+      <tbody id="auditBody"><tr><td colspan="7">加载中...</td></tr></tbody>
+    </table>
+  </section>
+
+  <section class="block">
+    <h2>多智能体配置</h2>
+    <table>
+      <thead><tr><th>角色</th><th>模型</th><th>职责</th></tr></thead>
+      <tbody id="agentBody"><tr><td colspan="3">加载中...</td></tr></tbody>
+    </table>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = window.location.origin;
+  let reviewerName = localStorage.getItem('reviewer_name') || '';
+
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2200);
+  }
+
+  async function loadStats(){
+    try{
+      const [ms, as] = await Promise.all([
+        fetch(`${API}/api/review/manual/stats`).then(r=>r.json()),
+        fetch(`${API}/api/review/stats`).then(r=>r.json()),
+      ]);
+      const s = ms.stats || {};
+      document.getElementById('stPending').textContent = s.pending ?? 0;
+      document.getElementById('stApproved').textContent = s.approved ?? 0;
+      document.getElementById('stRejected').textContent = s.rejected ?? 0;
+      document.getElementById('stTotal').textContent = as.stats?.total ?? 0;
+    }catch(e){ console.error(e); }
+  }
+
+  async function loadQueue(){
+    const listEl = document.getElementById('queueList');
+    try{
+      const res = await fetch(`${API}/api/review/manual/all?limit=100`);
+      const data = await res.json();
+      const items = data.items || [];
+      if(items.length === 0){
+        listEl.innerHTML = '<div class="empty">暂无审核记录。上传文档后，中风险内容会自动进入此处等待人工审核。</div>';
+        return;
+      }
+      listEl.innerHTML = items.map(it => renderItem(it)).join('');
+    }catch(e){
+      listEl.innerHTML = '<div class="empty">加载失败：' + e.message + '</div>';
+    }
+  }
+
+  function renderItem(it){
+    const statusBadge = {
+      pending: '<span class="badge pending">待审核</span>',
+      approved: '<span class="badge approved">已通过</span>',
+      rejected: '<span class="badge rejected">已驳回</span>',
+    }[it.status] || '';
+    const risk = `<span class="badge ${it.risk_level==='high'?'high':'medium'}">${it.risk_level==='high'?'高风险':'中风险'}</span>`;
+    const findings = [
+      ...(it.rule_findings||[]).map(f=>`<li class="rule">【规则审查】${esc(f)}</li>`),
+      ...(it.llm_findings||[]).map(f=>`<li class="llm">【LLM 审查】${esc(f)}</li>`),
+    ].join('');
+    const summary = it.llm_summary ? `<div class="summary">LLM 结论：${esc(it.llm_summary)}</div>` : '';
+    const reviewed = it.status !== 'pending'
+      ? `<div class="summary">审核人：${esc(it.reviewer||'')} · ${esc(it.review_ts||'')} · ${esc(it.review_note||'')}</div>`
+      : '';
+    const actions = it.status === 'pending'
+      ? `<div class="actions">
+           <input placeholder="审核人" id="who-${it.review_id}" value="${esc(reviewerName)}">
+           <input class="note" placeholder="审核意见（可选）" id="note-${it.review_id}">
+           <button class="btn success" onclick="decide('${it.review_id}', true)">通过并导入</button>
+           <button class="btn danger" onclick="decide('${it.review_id}', false)">驳回</button>
+         </div>`
+      : '';
+    return `<div class="item">
+      <div class="item-head">
+        <span class="fname">${esc(it.filename)}</span>
+        ${risk}${statusBadge}
+        <span class="rid">${it.review_id}</span>
+        <span class="time">${esc(it.ts)}</span>
+      </div>
+      <ul class="findings">${findings || '<li>无具体发现</li>'}</ul>
+      ${summary}${reviewed}${actions}
+    </div>`;
+  }
+
+  function esc(s){
+    return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function decide(rid, approve){
+    const who = document.getElementById(`who-${rid}`).value.trim();
+    const note = document.getElementById(`note-${rid}`).value.trim();
+    if(who) { reviewerName = who; localStorage.setItem('reviewer_name', who); }
+    if(!approve && !note){ toast('驳回时请填写审核意见'); return; }
+    try{
+      const url = `${API}/api/review/manual/${approve?'approve':'reject'}/${rid}`;
+      const res = await fetch(url, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({reviewer: who||'admin', note})
+      });
+      const data = await res.json();
+      if(data.code === 200){
+        toast(approve ? '已通过，正在继续导入智库' : '已驳回');
+        loadAll();
+      }else{
+        toast(data.detail || '操作失败');
+      }
+    }catch(e){ toast('请求失败：' + e.message); }
+  }
+
+  async function batchApprove(){
+    if(!confirm('确认批量通过全部待审核文档？')) return;
+    const who = reviewerName || 'admin';
+    try{
+      const res = await fetch(`${API}/api/review/manual/batch-approve`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({reviewer: who, note: '批量通过'})
+      });
+      const data = await res.json();
+      toast(`批量通过 ${data.approved} 条`);
+      loadAll();
+    }catch(e){ toast('请求失败：' + e.message); }
+  }
+
+  async function loadAudit(){
+    const body = document.getElementById('auditBody');
+    try{
+      const res = await fetch(`${API}/api/review/audit-logs?limit=50`);
+      const data = await res.json();
+      const items = data.items || [];
+      body.innerHTML = items.length === 0
+        ? '<tr><td colspan="7">暂无审计记录</td></tr>'
+        : items.map(a=>`<tr>
+            <td>${esc(a.ts)}</td><td>${esc(a.type)}</td><td>${esc(a.action)}</td>
+            <td title="${esc(a.target)}">${esc((a.target||'').slice(0,40))}</td>
+            <td class="${a.approved?'tag-ok':'tag-no'}">${a.approved?'通过':'拦截'}</td>
+            <td>${esc(a.risk_level)}</td>
+            <td title="${esc((a.reasons||[]).join('；'))}">${esc((a.reasons||[]).join('；').slice(0,60))}</td>
+          </tr>`).join('');
+    }catch(e){ body.innerHTML = '<tr><td colspan="7">加载失败</td></tr>'; }
+  }
+
+  async function loadAgents(){
+    const body = document.getElementById('agentBody');
+    try{
+      const res = await fetch(`${API}/api/review/agents`);
+      const data = await res.json();
+      const agents = data.agents || {};
+      body.innerHTML = Object.entries(agents).map(([role, a])=>`<tr>
+        <td><b>${esc(role)}</b></td><td>${esc(a.model)}</td><td>${esc(a.desc)}</td>
+      </tr>`).join('');
+    }catch(e){ body.innerHTML = '<tr><td colspan="3">加载失败</td></tr>'; }
+  }
+
+  function loadAll(){ loadStats(); loadQueue(); loadAudit(); loadAgents(); }
+  loadAll();
+  setInterval(loadStats, 8000);
+</script>
+</body>
+</html>

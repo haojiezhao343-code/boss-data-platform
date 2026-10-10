@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>知识库问答 · BOSS智库</title>
+  <style>
+    /* ===== 商务简约风 设计 Token（与 import.html 统一） ===== */
+    :root{
+      --c-ink:#0f172a; --c-text:#334155; --c-muted:#64748b; --c-faint:#94a3b8;
+      --c-brand:#2563eb; --c-brand-dark:#1d4ed8; --c-brand-light:#eff6ff;
+      --c-bg:#f8fafc; --c-panel:#ffffff; --c-border:#e2e8f0; --c-border-strong:#cbd5e1;
+      --c-hover:#f1f5f9; --c-success:#16a34a; --c-warn:#d97706; --c-danger:#dc2626;
+      --radius:10px; --radius-sm:6px;
+      --shadow-sm:0 1px 2px rgba(15,23,42,.04);
+      --shadow:0 1px 3px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.07);
+      --t:.2s ease;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+      background:var(--c-bg);
+      color:var(--c-text);
+      height:100vh;
+      display:flex;justify-content:center;align-items:center;
+      padding:18px;
+      -webkit-font-smoothing:antialiased;
+    }
+    .app{
+      width:100%;max-width:980px;height:min(840px,94vh);
+      background:var(--c-panel);border:1px solid var(--c-border);
+      border-radius:var(--radius);box-shadow:var(--shadow);
+      overflow:hidden;display:flex;flex-direction:column;
+    }
+    /* ===== 顶栏 ===== */
+    .topbar{
+      display:flex;align-items:center;gap:12px;padding:14px 20px;
+      border-bottom:1px solid var(--c-border);background:var(--c-panel);
+    }
+    .brand{display:flex;align-items:center;gap:12px;min-width:240px}
+    .logo{
+      width:36px;height:36px;border-radius:var(--radius-sm);
+      background:var(--c-brand);display:flex;align-items:center;justify-content:center;
+      color:#fff;font-size:15px;font-weight:700;flex-shrink:0;
+    }
+    .title{display:flex;flex-direction:column;line-height:1.2}
+    .title strong{font-size:15px;color:var(--c-ink);font-weight:700}
+    .title span{font-size:12px;color:var(--c-muted);margin-top:3px}
+    .top-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+    .pill{
+      font-size:12px;color:var(--c-muted);border:1px solid var(--c-border);
+      padding:5px 12px;border-radius:999px;background:var(--c-panel);
+      display:inline-flex;align-items:center;gap:6px;
+    }
+    .pill::before{
+      content:"";width:6px;height:6px;border-radius:50%;background:var(--c-faint);
+    }
+    .pill.ok::before{background:var(--c-success)}
+    .btn{
+      border:1px solid var(--c-border-strong);background:var(--c-panel);
+      color:var(--c-text);padding:7px 12px;border-radius:var(--radius-sm);
+      font-size:12px;font-weight:500;cursor:pointer;transition:all var(--t);
+    }
+    .btn:hover{border-color:var(--c-brand);color:var(--c-brand);background:var(--c-brand-light)}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .toggle-label{
+      font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer;
+      user-select:none;color:var(--c-muted);
+    }
+    .toggle-label input{cursor:pointer}
+
+    /* ===== 对话区 ===== */
+    .chat{
+      flex:1;overflow:auto;padding:18px 18px 10px;background:var(--c-bg);
+    }
+    .dayline{text-align:center;color:var(--c-faint);font-size:12px;margin:4px 0 14px}
+    .msg{display:flex;gap:10px;margin:12px 0;align-items:flex-end}
+    .msg.user{justify-content:flex-end}
+    .msg > div:not(.avatar){flex:1;min-width:0}
+    .msg.user > div:not(.avatar){display:flex;flex-direction:column;align-items:flex-end}
+    .avatar{
+      width:32px;height:32px;border-radius:var(--radius-sm);background:var(--c-hover);
+      display:flex;align-items:center;justify-content:center;font-size:12px;
+      color:var(--c-muted);flex:0 0 auto;font-weight:600;
+    }
+    .avatar.bot{background:var(--c-brand);color:#fff}
+    .bubble{
+      max-width:min(720px,76%);display:inline-block;border-radius:var(--radius);
+      padding:11px 14px;border:1px solid var(--c-border);background:var(--c-panel);
+      position:relative;line-height:1.6;font-size:14px;white-space:pre-wrap;
+      overflow-wrap:break-word;box-shadow:var(--shadow-sm);
+    }
+    .msg.user .bubble{background:var(--c-brand);color:#fff;border-color:transparent}
+    .meta{font-size:11px;color:var(--c-faint);margin-top:5px}
+    .msg.user .meta{color:var(--c-faint)}
+    details.progress{
+      margin-top:8px;border:1px dashed var(--c-border-strong);border-radius:var(--radius-sm);
+      padding:8px 10px;background:var(--c-bg);
+    }
+    details.progress summary{cursor:pointer;user-select:none;color:var(--c-muted);font-size:12px}
+    .progress ul{margin:8px 0 0 18px;padding:0;list-style:none}
+    .progress li{margin:4px 0;font-size:12px;color:var(--c-muted)}
+    .answer-images{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+    .answer-images img{
+      display:block;max-width:min(100%,600px);max-height:600px;width:auto;height:auto;
+      border-radius:var(--radius);border:1px solid var(--c-border);
+      box-shadow:var(--shadow-sm);background:var(--c-panel);
+    }
+    .answer-images a{font-size:12px;color:var(--c-muted);text-decoration:none;word-break:break-all}
+
+    /* ===== 打字动画 ===== */
+    .typing{display:inline-flex;gap:5px;align-items:center}
+    .dot{
+      width:6px;height:6px;border-radius:50%;background:var(--c-faint);
+      animation:bounce 1.2s infinite ease-in-out;
+    }
+    .dot:nth-child(2){animation-delay:.15s}
+    .dot:nth-child(3){animation-delay:.3s}
+    @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.5}40%{transform:translateY(-4px);opacity:1}}
+
+    /* ===== 输入区 ===== */
+    .composer{
+      border-top:1px solid var(--c-border);padding:12px 16px;
+      display:flex;gap:8px;align-items:flex-end;background:var(--c-panel);
+    }
+    .input-wrap{flex:1;display:flex;align-items:flex-end;gap:6px}
+    textarea{
+      flex:1;resize:none;min-height:44px;max-height:140px;padding:10px 14px;
+      border-radius:var(--radius);border:1px solid var(--c-border);outline:none;
+      font-size:14px;line-height:1.5;font-family:inherit;color:var(--c-text);
+      background:var(--c-panel);transition:border-color var(--t),box-shadow var(--t);
+    }
+    textarea::placeholder{color:var(--c-faint)}
+    textarea:focus{border-color:var(--c-brand);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+    textarea.recording{
+      border-color:var(--c-danger);box-shadow:0 0 0 3px rgba(220,38,38,.12);
+    }
+    textarea.recording::placeholder{color:var(--c-danger)}
+
+    /* 麦克风按钮 */
+    .mic-btn{
+      width:44px;height:44px;border:1px solid var(--c-border-strong);
+      background:var(--c-panel);border-radius:var(--radius);cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;color:var(--c-muted);transition:all var(--t);flex-shrink:0;
+    }
+    .mic-btn:hover:not(:disabled){border-color:var(--c-brand);color:var(--c-brand);background:var(--c-brand-light)}
+    .mic-btn:disabled{opacity:.4;cursor:not-allowed}
+    .mic-btn.recording{
+      border-color:var(--c-danger);color:#fff;background:var(--c-danger);
+      animation:micPulse 1.4s infinite;
+    }
+    @keyframes micPulse{
+      0%{box-shadow:0 0 0 0 rgba(220,38,38,.4)}
+      70%{box-shadow:0 0 0 12px rgba(220,38,38,0)}
+      100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}
+    }
+    .send{
+      width:84px;height:44px;border:none;border-radius:var(--radius);cursor:pointer;
+      font-size:14px;font-weight:600;color:#fff;background:var(--c-brand);
+      transition:background var(--t);flex-shrink:0;
+    }
+    .send:hover:not(:disabled){background:var(--c-brand-dark)}
+    .send:disabled{opacity:.5;cursor:not-allowed}
+
+    /* 录音状态提示条 */
+    .voice-bar{
+      display:none;align-items:center;gap:8px;padding:6px 16px;
+      background:#fef2f2;border-top:1px solid #fecaca;color:var(--c-danger);
+      font-size:12px;font-weight:500;
+    }
+    .voice-bar.show{display:flex}
+    .voice-bar .vb-dot{
+      width:7px;height:7px;border-radius:50%;background:var(--c-danger);
+      animation:vbBlink .8s infinite;
+    }
+    @keyframes vbBlink{0%,100%{opacity:1}50%{opacity:.3}}
+
+    .hint{padding:0 16px 10px;color:var(--c-faint);font-size:11px;background:var(--c-panel)}
+    .kbd{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      border:1px solid var(--c-border);padding:1px 5px;border-radius:4px;
+      background:var(--c-bg);color:var(--c-muted);font-size:11px;
+    }
+
+    /* ===== 导入模态框 ===== */
+    .modal-mask{
+      display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);
+      z-index:100;justify-content:center;align-items:center;
+      animation:fadeIn .2s ease;
+    }
+    .modal-mask.show{display:flex}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    .modal{
+      width:min(560px,92vw);max-height:80vh;background:var(--c-panel);
+      border:1px solid var(--c-border);border-radius:var(--radius);
+      box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden;
+      animation:modalUp .25s ease;
+    }
+    @keyframes modalUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .modal-head{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:16px 20px;border-bottom:1px solid var(--c-border);
+    }
+    .modal-head h3{font-size:15px;font-weight:700;color:var(--c-ink)}
+    .modal-close{
+      width:28px;height:28px;border:none;background:transparent;cursor:pointer;
+      font-size:18px;color:var(--c-muted);border-radius:var(--radius-sm);
+      display:flex;align-items:center;justify-content:center;transition:all var(--t);
+    }
+    .modal-close:hover{background:var(--c-hover);color:var(--c-danger)}
+    .modal-body{padding:20px;overflow:auto;flex:1}
+    .drop-area{
+      border:1.5px dashed var(--c-border-strong);border-radius:var(--radius);
+      padding:32px 20px;text-align:center;cursor:pointer;transition:all var(--t);
+      background:var(--c-bg);
+    }
+    .drop-area:hover,.drop-area.drag-over{
+      border-color:var(--c-brand);background:var(--c-brand-light);
+    }
+    .drop-area .di-icon{font-size:34px;color:var(--c-brand);margin-bottom:8px}
+    .drop-area .di-title{font-size:14px;font-weight:600;color:var(--c-ink)}
+    .drop-area .di-hint{font-size:12px;color:var(--c-muted);margin-top:3px}
+    .import-file-input{display:none}
+    .import-list{margin-top:16px}
+    .import-list:empty{margin-top:0}
+    .import-item{
+      border:1px solid var(--c-border);border-radius:var(--radius-sm);
+      padding:12px 14px;margin-bottom:8px;background:var(--c-panel);
+    }
+    .import-item-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .import-item-name{
+      font-size:13px;font-weight:600;color:var(--c-ink);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;
+    }
+    .import-item-size{font-size:11px;color:var(--c-faint);margin-top:2px}
+    .import-progress{
+      width:100%;height:3px;background:var(--c-border);border-radius:2px;
+      margin-top:8px;overflow:hidden;display:none;
+    }
+    .import-progress.show{display:block}
+    .import-progress > div{
+      height:100%;background:var(--c-warn);border-radius:2px;
+      transition:width var(--t),background-color var(--t);width:0;
+    }
+    .import-badge{
+      padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;
+      color:#fff;min-width:64px;text-align:center;flex-shrink:0;
+    }
+    .ib-upload{background:var(--c-warn)}
+    .ib-process{background:var(--c-brand)}
+    .ib-done{background:var(--c-success)}
+    .ib-fail{background:var(--c-danger)}
+    .import-done-tip{
+      display:none;margin-top:14px;padding:12px 14px;border-radius:var(--radius-sm);
+      background:#ecfdf5;border:1px solid #a7f3d0;color:var(--c-success);
+      font-size:13px;font-weight:500;
+    }
+    .import-done-tip.show{display:flex;align-items:center;gap:8px}
+    .import-done-tip.tip-warn{
+      background:#fffbeb;border-color:#fde68a;color:var(--c-warn);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">知</div>
+        <div class="title">
+          <strong>BOSS数智平台</strong>
+          <span id="subTitle">在线 · 多智能体问答（知识库 + 数据问数）</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <label class="toggle-label">
+          <input type="checkbox" id="streamToggle" checked> 流式输出
+        </label>
+        <span class="pill" id="apiPill">API 未连接</span>
+        <button class="btn" id="btnClear">清空对话</button>
+        <button class="btn" onclick="location.href='/import.html'">📂 导入文件</button>
+        <button class="btn" onclick="location.href='/review.html'">审核管理</button>
+      </div>
+    </div>
+
+    <div class="chat" id="chat">
+      <div class="dayline">今天</div>
+      <div class="msg bot">
+        <div class="avatar bot">智</div>
+        <div>
+          <div class="bubble">你好，我是BOSS智库知识库客服。你可以直接提问，我会在"阶段进度"里展示处理过程。</div>
+          <div class="meta">提示：可以问"如何使用万用表测量电压？"</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="voice-bar" id="voiceBar">
+      <span class="vb-dot"></span>
+      <span id="voiceStatus">语音录入中…请说话</span>
+      <span id="voiceInterim" style="margin-left:auto;color:var(--c-muted);font-weight:400;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+    </div>
+
+    <div class="composer">
+      <div class="input-wrap">
+        <textarea id="input" placeholder="请输入问题（Enter 发送，Shift+Enter 换行）"></textarea>
+      </div>
+      <button class="mic-btn" id="micBtn" title="语音输入（点击说话）" type="button">🎤</button>
+      <button class="send" id="send">发送</button>
+    </div>
+    <div class="hint">快捷键：<span class="kbd">Enter</span> 发送，<span class="kbd">Shift</span>+<span class="kbd">Enter</span> 换行 · 点击 <span class="kbd">🎤</span> 语音输入</div>
+  </div>
+
+  <!-- 导入文件模态框 -->
+  <div class="modal-mask" id="importModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>导入文件到知识库</h3>
+        <button class="modal-close" id="importModalClose" type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="drop-area" id="importDrop">
+          <div class="di-icon">☁️</div>
+          <div class="di-title">点击或拖拽文件到此处</div>
+          <div class="di-hint">支持 PDF / Markdown，可批量多选</div>
+        </div>
+        <input type="file" id="importFileInput" class="import-file-input" multiple accept=".pdf,.md">
+        <div class="import-list" id="importList"></div>
+        <div class="import-done-tip" id="importDoneTip">✓ 全部导入完成，现在可以在下方输入框提问查询这些文件的内容了</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 默认同源；如你把页面单独打开（file://），可改成 http://127.0.0.1:8001
+    const API_BASE = `${location.protocol}//${location.host}`.includes('http') ? `${location.protocol}//${location.host}` : 'http://127.0.0.1:7955';
+    const chatEl = document.getElementById('chat');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const apiPill = document.getElementById('apiPill');
+    const btnClear = document.getElementById('btnClear');
+    const streamToggle = document.getElementById('streamToggle');
+    // 语音相关
+    const micBtn = document.getElementById('micBtn');
+    const voiceBar = document.getElementById('voiceBar');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const voiceInterim = document.getElementById('voiceInterim');
+
+    // Session ID Logic
+    let sessionId = localStorage.getItem('kb_session_id');
+    if (!sessionId) {
+      sessionId = 'sess-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem('kb_session_id', sessionId);
+    }
+
+    function scrollToBottom(){
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+    function nowTime(){
+      const d = new Date();
+      return d.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+    }
+    function formatTime(ts){
+      if(!ts) return nowTime();
+      const d = new Date(Number(ts) * 1000);
+      if(Number.isNaN(d.getTime())) return nowTime();
+      return d.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+    }
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    function isImageUrl(url){
+      try {
+        const u = new URL(url);
+        return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(u.pathname);
+      } catch (e) {
+        return /\.(png|jpe?g|gif|webp|bmp|svg)(\?|#|$)/i.test(url || '');
+      }
+    }
+
+    function normalizeUrl(rawUrl){
+      const s = String(rawUrl || '').trim();
+      if(!s) return '';
+      return s.replace(/\s/g, '%20');
+    }
+
+    function dedupeKeepOrder(arr){
+      const seen = new Set();
+      const out = [];
+      for(const x of (Array.isArray(arr) ? arr : [])){
+        const v = String(x || '');
+        if(!v) continue;
+        if(seen.has(v)) continue;
+        seen.add(v);
+        out.push(v);
+      }
+      return out;
+    }
+
+    function extractUrlsLoose(text){
+      const s = String(text || '');
+      const regex = /(https?:\/\/[^\s]+)/g;
+      const matches = s.match(regex) || [];
+      const urls = [];
+      const trimTailPunct = (u) => String(u || '').replace(/[)\]}'">，。,;；\]】）＞]+$/g, '');
+      const trimHeadPunct = (u) => String(u || '').replace(/^[<([{'"]+|^[＜（【\[]+/g, '');
+      for(const m of matches){
+        let u = trimHeadPunct(trimTailPunct(m));
+        if(u) urls.push(u);
+      }
+      return dedupeKeepOrder(urls);
+    }
+
+    function parseImagesFromTextLoosely(text){
+      const urls = extractUrlsLoose(text).filter(isImageUrl);
+      return dedupeKeepOrder(urls);
+    }
+
+    function findLastImageMarkerIndex(raw){
+      const s = String(raw || '');
+      const re = /【\s*图片\s*】|\[\s*图片\s*\]/g;
+      let m;
+      let lastIdx = -1;
+      let lastLen = 0;
+      while((m = re.exec(s)) !== null){
+        lastIdx = m.index;
+        lastLen = m[0].length;
+      }
+      return { idx: lastIdx, len: lastLen };
+    }
+
+    function parseAnswerAndImages(text){
+      const raw = String(text || '');
+      const { idx, len } = findLastImageMarkerIndex(raw);
+      if(idx === -1) return { text: raw, images: [] };
+      const before = raw.slice(0, idx).trimEnd();
+      const after = raw.slice(idx + len).trim();
+      const urls = [];
+      const lines = after.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      for(const line of lines){
+        if(line.startsWith('http://') || line.startsWith('https://')){
+          urls.push(line);
+        }else{
+          const matches = extractUrlsLoose(line);
+          for(const u of matches){
+            urls.push(u);
+          }
+        }
+      }
+      const seen = new Set();
+      const images = [];
+      for(const u of urls){
+        const normalized = normalizeUrl(u);
+        if(!isImageUrl(normalized)) continue;
+        if(seen.has(normalized)) continue;
+        seen.add(normalized);
+        images.push(normalized);
+      }
+      return { text: before, images };
+    }
+
+    function shouldShowImagesByAnswer(answerText){
+      const t = String(answerText || '');
+      const keywords = [
+        '如图', '如下图', '见图', '见下图', '下图', '上图',
+        '图片', '示意图', '结构图', '外观', '接线图', '电路图', '原理图', '安装图', '尺寸图', '截图'
+      ];
+      return keywords.some(k => t.includes(k));
+    }
+
+    function renderAnswerWithImages(containerEl, answerText, candidateImageUrls){
+      const { text, images: imagesFromBlock } = parseAnswerAndImages(answerText);
+      const candidates = Array.isArray(candidateImageUrls)
+        ? candidateImageUrls.map(normalizeUrl).filter(isImageUrl)
+        : [];
+      const hasBlockImages = imagesFromBlock && imagesFromBlock.length > 0;
+      const looseImages = extractUrlsLoose(answerText).map(normalizeUrl).filter(isImageUrl);
+      const shouldShow = hasBlockImages || (candidates.length > 0) || (looseImages.length > 0);
+      const allImages = new Set([
+          ...(hasBlockImages ? imagesFromBlock : []),
+          ...candidates,
+          ...looseImages
+      ]);
+      const images = Array.from(allImages);
+      containerEl.textContent = '';
+      if((text || '').trim().length > 0){
+        const textEl = document.createElement('div');
+        textEl.className = 'answer-text';
+        textEl.textContent = text;
+        containerEl.appendChild(textEl);
+      }else{
+        const textEl = document.createElement('div');
+        textEl.className = 'answer-text';
+        textEl.textContent = '（已完成，但未返回答案）';
+        containerEl.appendChild(textEl);
+      }
+      if(images && images.length > 0){
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'answer-images';
+        for(const url of images){
+          const safeUrl = normalizeUrl(url);
+          const img = document.createElement('img');
+          img.loading = 'lazy';
+          img.src = safeUrl;
+          img.alt = '参考图片';
+          img.referrerPolicy = 'no-referrer';
+          img.addEventListener('error', () => {
+            img.style.display = 'none';
+          });
+          imgWrap.appendChild(img);
+          const link = document.createElement('a');
+          link.href = safeUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = url;
+          imgWrap.appendChild(link);
+        }
+        containerEl.appendChild(imgWrap);
+      }
+    }
+
+    function addUserMsg(text){
+      const html = `
+        <div class="msg user">
+          <div>
+            <div class="bubble">${escapeHtml(text)}</div>
+            <div class="meta">${nowTime()}</div>
+          </div>
+          <div class="avatar">我</div>
+        </div>
+      `;
+      chatEl.insertAdjacentHTML('beforeend', html);
+      scrollToBottom();
+    }
+
+    function addUserMsgWithTime(text, ts){
+      const html = `
+        <div class="msg user">
+          <div>
+            <div class="bubble">${escapeHtml(text)}</div>
+            <div class="meta">${formatTime(ts)}</div>
+          </div>
+          <div class="avatar">我</div>
+        </div>
+      `;
+      chatEl.insertAdjacentHTML('beforeend', html);
+      scrollToBottom();
+    }
+
+    function addBotMsgWithTime(text, ts, imageUrls){
+      const id = 'bot-his-' + Math.random().toString(36).slice(2);
+      const html = `
+        <div class="msg bot" id="${id}">
+          <div class="avatar bot">智</div>
+          <div>
+            <div class="bubble"><div class="answer"></div></div>
+            <div class="meta">${formatTime(ts)}</div>
+          </div>
+        </div>
+      `;
+      chatEl.insertAdjacentHTML('beforeend', html);
+      const el = document.getElementById(id);
+      if(el){
+        const answerEl = el.querySelector('.answer');
+        renderAnswerWithImages(answerEl, text || '', imageUrls || []);
+      }
+      scrollToBottom();
+    }
+
+    function addBotMsgSkeleton(){
+      const id = 'bot-' + Math.random().toString(36).slice(2);
+      const html = `
+        <div class="msg bot" id="${id}">
+          <div class="avatar bot">智</div>
+          <div style="min-width: 180px;">
+            <div class="bubble">
+              <span class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+              <details class="progress" open>
+                <summary>阶段进度（等待中）</summary>
+                <ul></ul>
+              </details>
+            </div>
+            <div class="meta">${nowTime()}</div>
+          </div>
+        </div>
+      `;
+      chatEl.insertAdjacentHTML('beforeend', html);
+      scrollToBottom();
+      return document.getElementById(id);
+    }
+
+    function renderProgress(botMsgEl, doneList, runningList, status){
+      const details = botMsgEl.querySelector('details.progress');
+      const summary = details.querySelector('summary');
+      const ul = details.querySelector('ul');
+      const done = Array.isArray(doneList) ? doneList : [];
+      const running = Array.isArray(runningList) ? runningList : [];
+      const totalDone = done.length;
+      const totalRun = running.length;
+      const statusMap = {
+        'processing': '处理中',
+        'completed': '已完成',
+        'failed': '失败',
+        'pending': '等待中',
+      };
+      const displayStatus = statusMap[status] || status || 'unknown';
+      summary.textContent = `阶段进度（已完成${totalDone}，进行中${totalRun}，状态：${displayStatus}）`;
+      const lines = [
+        ...done.map(x => `✅ ${x}`),
+        ...running.map(x => `⏳ ${x}`)
+      ];
+      ul.innerHTML = '';
+      if(lines.length === 0){
+        ul.insertAdjacentHTML('beforeend', '<li>暂无进度</li>');
+      }else{
+        for(const line of lines){
+          ul.insertAdjacentHTML('beforeend', `<li>${escapeHtml(line)}</li>`);
+        }
+      }
+    }
+
+    function finalizeBotAnswer(botMsgEl, answer, error, imageUrls){
+      const bubble = botMsgEl.querySelector('.bubble');
+      const progress = botMsgEl.querySelector('details.progress');
+      const err = (error || '').trim();
+      if(err){
+        const progressEl = progress ? progress : null;
+        if(progressEl) {
+            progressEl.remove();
+            progressEl.removeAttribute('open');
+        }
+        bubble.textContent = '';
+        const errEl = document.createElement('div');
+        errEl.className = 'answer';
+        errEl.textContent = `抱歉，本次处理失败：\n${err}`;
+        bubble.appendChild(errEl);
+        if(progressEl) bubble.appendChild(progressEl);
+        return;
+      }
+      const progressEl = progress ? progress : null;
+      if(progressEl) {
+        progressEl.remove();
+        progressEl.removeAttribute('open');
+      }
+      bubble.textContent = '';
+      const answerEl = document.createElement('div');
+      answerEl.className = 'answer';
+      bubble.appendChild(answerEl);
+      renderAnswerWithImages(answerEl, answer || '', imageUrls || []);
+      if(progressEl) bubble.appendChild(progressEl);
+    }
+
+    async function apiHealth(){
+      try{
+        const res = await fetch(`${API_BASE}/health`);
+        if(!res.ok) throw new Error('health not ok');
+        apiPill.textContent = `API 已连接`;
+        apiPill.classList.add('ok');
+      }catch(e){
+        apiPill.textContent = `API 未连接`;
+        apiPill.classList.remove('ok');
+      }
+    }
+
+    async function loadHistory(){
+      try{
+        const res = await fetch(`${API_BASE}/history/${sessionId}`);
+        if(!res.ok) return;
+        const data = await res.json();
+        const items = Array.isArray(data.items) ? data.items : [];
+        if(items.length === 0) return;
+        const nodes = Array.from(chatEl.querySelectorAll('.msg'));
+        for(let i=1;i<nodes.length;i++) nodes[i].remove();
+        for(const item of items){
+          if(item.role === 'user'){
+            addUserMsgWithTime(item.text || '', item.ts);
+          }else{
+            addBotMsgWithTime(item.text || '', item.ts, item.image_urls || []);
+          }
+        }
+        scrollToBottom();
+      }catch(_){}
+    }
+
+    async function submitQuery(text){
+      const isStream = streamToggle.checked;
+      const res = await fetch(`${API_BASE}/query`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          query: text,
+          session_id: sessionId,
+          is_stream: isStream
+        })
+      });
+      if(!res.ok){
+        const msg = await res.text();
+        throw new Error(msg || '请求失败');
+      }
+      return await res.json();
+    }
+
+    async function poll(taskId, botMsgEl){
+      const typing = botMsgEl.querySelector('.typing');
+      const interval = setInterval(async () => {
+        try{
+          const res = await fetch(`${API_BASE}/status/${taskId}`);
+          const data = await res.json();
+          renderProgress(botMsgEl, data.done_list, data.running_list, data.status);
+          if(data.status === 'completed'){
+            if(typing) typing.remove();
+            finalizeBotAnswer(botMsgEl, data.answer, data.error, data.image_urls || []);
+            clearInterval(interval);
+            sendBtn.disabled = false;
+          }else if(data.status === 'failed'){
+            if(typing) typing.remove();
+            finalizeBotAnswer(botMsgEl, data.answer, data.error || 'failed', data.image_urls || []);
+            clearInterval(interval);
+            sendBtn.disabled = false;
+          }
+        }catch(e){
+        }
+      }, 1200);
+    }
+
+    async function onSend(){
+      console.log('[perf] A onSend start', performance.now());
+      const text = (inputEl.value || '').trim();
+      if(!text) return;
+      inputEl.value = '';
+      addUserMsg(text);
+      const botMsgEl = addBotMsgSkeleton();
+      sendBtn.disabled = true;
+
+      try{
+        const isStream = streamToggle.checked;
+        console.log('[perf] B submitQuery start', performance.now(), { isStream });
+        const data = await submitQuery(text);
+        console.log('[perf] B submitQuery end', performance.now(), data);
+        renderProgress(botMsgEl, [], [], 'pending');
+
+        if (!isStream) {
+          renderProgress(botMsgEl, data.done_list || [], [], 'completed');
+          finalizeBotAnswer(botMsgEl, data.answer, data.error, data.image_urls || []);
+          sendBtn.disabled = false;
+          return;
+        }
+
+        const { session_id } = data;
+        const bubble = botMsgEl.querySelector('.bubble');
+        let answerEl = bubble.querySelector('.answer');
+        if(!answerEl){
+          answerEl = document.createElement('div');
+          answerEl.className = 'answer';
+          bubble.insertBefore(answerEl, bubble.firstChild);
+        }
+
+        const es = new EventSource(`${API_BASE}/stream/${session_id}`);
+        console.log('[perf] C EventSource created', performance.now(), { session_id });
+        let rawAnswerText = '';
+
+        es.addEventListener('progress', (e) => {
+          try{
+            const d = JSON.parse(e.data || '{}');
+            renderProgress(botMsgEl, d.done_list, d.running_list, d.status);
+            if(d && d.status === 'completed'){
+              const typing = botMsgEl.querySelector('.typing');
+              if(typing) typing.remove();
+              sendBtn.disabled = false;
+            }
+          }catch(_){}
+        });
+
+        es.addEventListener('delta', (e) => {
+          try{
+            const d = JSON.parse(e.data || '{}');
+            const delta = d.delta || '';
+            if(delta){
+              rawAnswerText += delta;
+              renderAnswerWithImages(answerEl, rawAnswerText, []);
+              scrollToBottom();
+            }
+          }catch(_){}
+        });
+
+        es.addEventListener('final', (e) => {
+          const typing = botMsgEl.querySelector('.typing');
+          if(typing) typing.remove();
+          const progress = botMsgEl.querySelector('details.progress');
+          if(progress) progress.removeAttribute('open');
+          try{
+            const d = JSON.parse(e.data || '{}');
+            const finalText = (d && typeof d.answer === 'string' && d.answer.trim().length > 0) ? d.answer : (rawAnswerText || answerEl.textContent || '');
+            renderAnswerWithImages(answerEl, finalText, d.image_urls || []);
+          }catch(_){}
+          es.close();
+          sendBtn.disabled = false;
+        });
+
+        es.addEventListener('final_answer', (e) => {
+          const typing = botMsgEl.querySelector('.typing');
+          if(typing) typing.remove();
+          const progress = botMsgEl.querySelector('details.progress');
+          if(progress) progress.removeAttribute('open');
+          try{
+            const d = JSON.parse(e.data || '{}');
+            const finalText = (d && typeof d.answer === 'string' && d.answer.trim().length > 0) ? d.answer : (rawAnswerText || answerEl.textContent || '');
+            renderAnswerWithImages(answerEl, finalText, d.image_urls || []);
+          }catch(_){}
+          es.close();
+          sendBtn.disabled = false;
+        });
+
+        es.addEventListener('error', (e) => {
+          const typing = botMsgEl.querySelector('.typing');
+          if(typing) typing.remove();
+          const progress = botMsgEl.querySelector('details.progress');
+          if(progress) progress.removeAttribute('open');
+          try{
+            const msg = e && e.data ? (JSON.parse(e.data).error || 'SSE 连接中断/失败') : 'SSE 连接中断/失败';
+            rawAnswerText += `\n\n（错误：${msg}）`;
+            renderAnswerWithImages(answerEl, rawAnswerText, []);
+          }catch(_){
+            rawAnswerText += `\n\n（错误：SSE 连接中断/失败）`;
+            renderAnswerWithImages(answerEl, rawAnswerText, []);
+          }
+          es.close();
+          sendBtn.disabled = false;
+        });
+      }catch(e){
+        const bubble = botMsgEl.querySelector('.bubble');
+        const progress = botMsgEl.querySelector('details.progress');
+        const typing = botMsgEl.querySelector('.typing');
+        if(typing) typing.remove();
+        bubble.innerHTML = `请求失败：${escapeHtml(e.message || e)}\n\n` + progress.outerHTML;
+        sendBtn.disabled = false;
+      }
+    }
+
+    sendBtn.addEventListener('click', onSend);
+    inputEl.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        onSend();
+      }
+    });
+    btnClear.addEventListener('click', async () => {
+      if(!confirm('确定要清空当前会话的历史记录吗？这将无法恢复。')) return;
+      try {
+        const res = await fetch(`${API_BASE}/history/${sessionId}`, { method: 'DELETE' });
+        if(!res.ok) {
+           console.error("Failed to clear history backend, status:", res.status);
+           alert('服务端清空失败，仅清空本地显示');
+        }
+      } catch(e) {
+        console.error("Failed to clear history backend", e);
+        alert('服务端清空失败，仅清空本地显示');
+      }
+      const nodes = Array.from(chatEl.querySelectorAll('.msg'));
+      for(let i=1;i<nodes.length;i++) nodes[i].remove();
+      scrollToBottom();
+    });
+
+    apiHealth();
+    setInterval(apiHealth, 5000);
+    loadHistory();
+    setTimeout(() => inputEl.focus(), 200);
+
+    /* =========================================================
+     * 语音输入功能（Web Speech API）
+     * 不改变后端逻辑：语音转文字 → 填入输入框 → 自动触发 onSend()
+     * 兼容性：Chrome / Edge 支持；Firefox 不支持则按钮禁用并提示
+     * ========================================================= */
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isRecording = false;
+    let finalTranscript = '';
+
+    if(SpeechRecognition){
+      recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN';
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        isRecording = true;
+        finalTranscript = '';
+        micBtn.classList.add('recording');
+        micBtn.textContent = '■';
+        micBtn.title = '点击停止录音';
+        inputEl.classList.add('recording');
+        inputEl.value = '';
+        inputEl.placeholder = '语音录入中…请说话';
+        voiceBar.classList.add('show');
+        voiceStatus.textContent = '语音录入中…请说话';
+        voiceInterim.textContent = '';
+      };
+
+      recognition.onresult = (event) => {
+        let interimText = '';
+        for(let i = event.resultIndex; i < event.results.length; i++){
+          const transcript = event.results[i][0].transcript;
+          if(event.results[i].isFinal){
+            finalTranscript += transcript;
+          }else{
+            interimText += transcript;
+          }
+        }
+        // 实时显示转写反馈：已确定文字 + 临时文字
+        inputEl.value = finalTranscript + interimText;
+        voiceInterim.textContent = interimText ? ('转写中：' + interimText) : (finalTranscript ? '转写中：' + finalTranscript : '');
+        scrollToBottom();
+      };
+
+      recognition.onerror = (event) => {
+        const errMap = {
+          'no-speech': '未检测到语音，请重试',
+          'audio-capture': '音频采集失败，请检查麦克风',
+          'not-allowed': '麦克风权限被拒绝，请在浏览器设置中允许',
+          'network': '语音服务网络错误',
+          'aborted': '录音已取消'
+        };
+        const msg = errMap[event.error] || ('语音识别错误：' + event.error);
+        if(event.error !== 'aborted'){
+          voiceStatus.textContent = msg;
+        }
+      };
+
+      recognition.onend = () => {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.textContent = '🎤';
+        micBtn.title = '语音输入（点击说话）';
+        inputEl.classList.remove('recording');
+        inputEl.placeholder = '请输入问题（Enter 发送，Shift+Enter 换行）';
+        voiceBar.classList.remove('show');
+        voiceInterim.textContent = '';
+
+        // 转写完成，将最终文字填入输入框并自动触发查询
+        const text = (finalTranscript || '').trim();
+        if(text){
+          inputEl.value = text;
+          // 自动发送查询
+          onSend();
+        }else{
+          inputEl.value = '';
+        }
+        inputEl.focus();
+      };
+
+      micBtn.addEventListener('click', () => {
+        if(isRecording){
+          recognition.stop();
+        }else{
+          try{
+            finalTranscript = '';
+            recognition.start();
+          }catch(e){
+            voiceStatus.textContent = '无法启动语音识别：' + (e.message || e);
+            voiceBar.classList.add('show');
+            setTimeout(() => voiceBar.classList.remove('show'), 3000);
+          }
+        }
+      });
+    }else{
+      // 浏览器不支持 Web Speech API
+      micBtn.disabled = true;
+      micBtn.title = '当前浏览器不支持语音输入，请使用 Chrome 或 Edge';
+      micBtn.style.opacity = '.4';
+    }
+
+    /* =========================================================
+     * 问答页内嵌批量导入功能
+     * 不改变后端逻辑：复用 import_service(7954) 的 /upload + /status 接口
+     * 流程：点击导入按钮 → 弹出模态框 → 选择/拖拽本地文件 → 批量上传
+     *       → 轮询进度 → 全部完成后提示可查询
+     * ========================================================= */
+    // import_service 固定在 7954 端口（query_service 在 7955）
+    const IMPORT_API_BASE = (() => {
+      try{
+        const u = new URL(API_BASE);
+        if(u.port === '7955'){ u.port = '7954'; return u.origin; }
+        if(u.port === '' || u.port === '7954') return u.origin;
+        return u.origin;
+      }catch(_){ return 'http://127.0.0.1:7954'; }
+    })();
+
+    const importModal = document.getElementById('importModal');
+    const importModalClose = document.getElementById('importModalClose');
+    const importDrop = document.getElementById('importDrop');
+    const importFileInput = document.getElementById('importFileInput');
+    const importList = document.getElementById('importList');
+    const importDoneTip = document.getElementById('importDoneTip');
+    let importTaskCount = 0;     // 本批次总文件数
+    let importOkCount = 0;       // 成功数
+    let importFailCount = 0;     // 失败数
+
+    function openImportModal(){
+      importModal.classList.add('show');
+      importDoneTip.classList.remove('show');
+    }
+    function closeImportModal(){
+      importModal.classList.remove('show');
+    }
+
+    // 导入入口已改为顶栏跳转独立导入页（/import.html）
+    if (typeof btnImport !== 'undefined' && btnImport) btnImport.addEventListener('click', openImportModal);
+    importModalClose.addEventListener('click', closeImportModal);
+    // 点击遮罩空白处关闭
+    importModal.addEventListener('click', (e) => {
+      if(e.target === importModal) closeImportModal();
+    });
+
+    // 点击拖拽区触发文件选择
+    importDrop.addEventListener('click', () => importFileInput.click());
+    importFileInput.addEventListener('change', (e) => {
+      handleImportFiles(e.target.files);
+      importFileInput.value = ''; // 允许重复选同一文件
+    });
+
+    // 拖拽上传
+    importDrop.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      importDrop.classList.add('drag-over');
+    });
+    importDrop.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      importDrop.classList.remove('drag-over');
+    });
+    importDrop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      importDrop.classList.remove('drag-over');
+      handleImportFiles(e.dataTransfer.files);
+    });
+
+    function handleImportFiles(files){
+      const arr = Array.from(files);
+      if(arr.length === 0) return;
+      importTaskCount += arr.length;
+      importDoneTip.classList.remove('show');
+      arr.forEach(uploadImportFile);
+    }
+
+    async function uploadImportFile(file){
+      const id = 'imp-' + Math.random().toString(36).slice(2, 11);
+      const html = `
+        <div class="import-item" id="${id}">
+          <div class="import-item-row">
+            <div style="flex:1;min-width:0">
+              <div class="import-item-name">${escapeHtml(file.name)}</div>
+              <div class="import-item-size">${(file.size/1024).toFixed(2)} KB</div>
+            </div>
+            <div class="import-badge ib-upload">上传中</div>
+          </div>
+          <div class="import-progress"><div></div></div>
+        </div>
+      `;
+      importList.insertAdjacentHTML('beforeend', html);
+      const itemEl = document.getElementById(id);
+      const badge = itemEl.querySelector('.import-badge');
+      const bar = itemEl.querySelector('.import-progress');
+      const barFill = itemEl.querySelector('.import-progress > div');
+      bar.classList.add('show');
+
+      const formData = new FormData();
+      formData.append('files', file);
+
+      try{
+        // 上传到 import_service 的 /upload 接口（CORS 已开放）
+        barFill.style.width = '40%';
+        const res = await fetch(`${IMPORT_API_BASE}/upload`, { method:'POST', body: formData });
+        if(!res.ok) throw new Error('上传失败 (' + res.status + ')');
+        const data = await res.json();
+        const taskId = (data.task_ids && data.task_ids[0]) || null;
+        if(!taskId) throw new Error('未返回任务ID');
+
+        barFill.style.width = '60%';
+        badge.textContent = '处理中'; badge.className = 'import-badge ib-process';
+        // 轮询处理进度
+        pollImportStatus(taskId, itemEl, badge, barFill);
+      }catch(err){
+        badge.textContent = '失败'; badge.className = 'import-badge ib-fail';
+        itemEl.title = err.message || String(err);
+        barFill.style.width = '100%'; barFill.style.background = 'var(--c-danger)';
+        markImportDone(false);
+      }
+    }
+
+    function pollImportStatus(taskId, itemEl, badge, barFill){
+      const interval = setInterval(async () => {
+        try{
+          const res = await fetch(`${IMPORT_API_BASE}/status/${taskId}`);
+          const data = await res.json();
+          if(data.status === 'completed'){
+            badge.textContent = '已完成'; badge.className = 'import-badge ib-done';
+            barFill.style.width = '100%'; barFill.style.background = 'var(--c-success)';
+            clearInterval(interval);
+            markImportDone(true);
+          }else if(data.status === 'failed'){
+            badge.textContent = '失败'; badge.className = 'import-badge ib-fail';
+            itemEl.title = (data.error || '处理失败') + '（可重新上传重试）';
+            barFill.style.width = '100%'; barFill.style.background = 'var(--c-danger)';
+            clearInterval(interval);
+            markImportDone(false);
+          }else if(data.status === 'processing'){
+            badge.textContent = '处理中'; badge.className = 'import-badge ib-process';
+            barFill.style.width = '80%';
+          }
+        }catch(e){ /* 轮询错误不终止 */ }
+      }, 2000);
+    }
+
+    function markImportDone(ok){
+      if(ok){ importOkCount++; } else { importFailCount++; }
+      const finished = importOkCount + importFailCount;
+      if(finished >= importTaskCount && importTaskCount > 0){
+        importDoneTip.classList.remove('show','tip-ok','tip-warn');
+        if(importFailCount === 0){
+          importDoneTip.classList.add('show','tip-ok');
+          importDoneTip.textContent = `✓ 全部 ${importTaskCount} 个文件导入完成，现在可以在下方输入框提问查询这些文件的内容了`;
+          addSystemNotice(`已成功导入 ${importTaskCount} 个文件到知识库，你可以开始提问了。`);
+        }else{
+          importDoneTip.classList.add('show','tip-warn');
+          importDoneTip.textContent = `⚠ 导入结束：成功 ${importOkCount} 个，失败 ${importFailCount} 个。鼠标悬停失败文件可查看原因，修复后可重新上传重试`;
+          addSystemNotice(`导入结束：成功 ${importOkCount} 个，失败 ${importFailCount} 个。失败文件已保留本地，修复问题后可重新上传。`);
+        }
+        // 重置批次计数，允许连续多批次上传
+        importTaskCount = 0; importOkCount = 0; importFailCount = 0;
+      }
+    }
+
+    // 系统提示消息（插入对话区）
+    function addSystemNotice(text){
+      const html = `
+        <div class="msg bot">
+          <div class="avatar bot">系</div>
+          <div>
+            <div class="bubble" style="background:#ecfdf5;border-color:#a7f3d0;color:var(--c-success)">${escapeHtml(text)}</div>
+            <div class="meta">${nowTime()}</div>
+          </div>
+        </div>
+      `;
+      chatEl.insertAdjacentHTML('beforeend', html);
+      scrollToBottom();
+    }
+  </script>
+</body>
+</html>

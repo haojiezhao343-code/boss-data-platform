@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = [
+    "app*",
+    "ai_agents*",
+    "config*",
+    "processor*",
+    "tool*",
+    "utils*",
+    "web*",
+    "review*",
+]
+
+[project]
+name = "boss-data-platform"
+version = "0.1.0"
+description = "BOSS数智平台 = BOSS问数(NL2SQL data_agent) + BOSS智库(知识库 knowledge_base) + 审查模块(SQL审查/内容审查)"
+requires-python = ">=3.12"
+dependencies = [
+    # ---- data_agent（BOSS问数）----
+    "asyncmy>=0.2.11",
+    "cryptography>=50.0.0",
+    "elasticsearch[async]>=8,<9",
+    "huggingface-hub>=1.26.0",
+    "jieba>=0.42.1",
+    "langchain-huggingface==1.2.1",
+    "langchain-deepseek>=1.1.0",
+    "loguru>=0.7.3",
+    "omegaconf>=2.3.1",
+    "pyyaml>=6.0.3",
+    "qdrant-client>=1.18.0",
+    "sqlalchemy>=2.0.51",
+    # ---- knowledge_base（BOSS智库）----
+    "colorlog>=6.10.1",
+    "flagembedding>=1.3.5",
+    "minio>=7.2.20",
+    "numpy>=2.5.0",
+    "openai-agents>=0.18.3",
+    "pymilvus[model]>=3.0.0",
+    "pymongo>=4.17.0",
+    "torch>=2.11.0",
+    "torchvision>=0.26.0",
+    "torchaudio>=2.11.0",
+    "transformers>=4.45.0,<5.0.0",
+    "dashscope>=1.26.4",
+    # ---- 共用 ----
+    "fastapi[standard]>=0.141.1",
+    "grandalf>=0.8",
+    "langchain>=1.3.14",
+    "langchain-text-splitters>=1.1.2",
+    "langchain-openai>=1.3.2",
+    "langgraph>=1.2.10",
+    "python-dotenv>=1.2.2",
+    "python-docx>=1.1.0",
+    "pypdf>=5.0.0",
+    "requests>=2.32.0",
+    "uvicorn[standard]>=0.51.0",
+]
+
+[tool.uv.sources]
+# 强制从 NVIDIA 源安装
+torch = { index = "pytorch-cuda" }
+torchvision = { index = "pytorch-cuda" }
+torchaudio = { index = "pytorch-cuda" }
+
+[[tool.uv.index]]
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true

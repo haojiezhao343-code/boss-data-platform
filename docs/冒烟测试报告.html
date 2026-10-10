@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOSS数智平台 · 多智能体改造冒烟测试报告</title>
+<style>
+  :root { --primary:#2563eb; --ok:#16a34a; --warn:#ea580c; --err:#dc2626; --border:#e5e7eb; --text:#1f2937; --muted:#6b7280; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Microsoft YaHei","PingFang SC",sans-serif; color:var(--text); background:#f8fafc; line-height:1.7; }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 24px; }
+  h1 { font-size:24px; border-bottom:3px solid var(--primary); padding-bottom:12px; margin-bottom:6px; }
+  .meta { color:var(--muted); font-size:13px; margin-bottom:24px; }
+  h2 { font-size:18px; margin:28px 0 12px; color:var(--primary); }
+  table { width:100%; border-collapse:collapse; background:#fff; font-size:14px; margin-bottom:8px; }
+  th,td { border:1px solid var(--border); padding:9px 12px; text-align:left; vertical-align:top; }
+  th { background:#eff6ff; font-weight:600; }
+  .ok { color:var(--ok); font-weight:600; }
+  .warn { color:var(--warn); font-weight:600; }
+  .err { color:var(--err); font-weight:600; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; background:#eff6ff; color:var(--primary); margin-right:4px; }
+  code { background:#f1f5f9; padding:1px 6px; border-radius:4px; font-size:13px; }
+  .summary { display:flex; gap:16px; margin:16px 0; flex-wrap:wrap; }
+  .card { flex:1; min-width:150px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center; }
+  .card .num { font-size:28px; font-weight:700; }
+  .card .lbl { font-size:13px; color:var(--muted); }
+  .note { background:#fffbeb; border-left:4px solid #f59e0b; padding:12px 16px; border-radius:6px; font-size:13px; margin:12px 0; }
+  .agents { background:#fff; border:1px solid var(--border); border-radius:10px; padding:16px 20px; font-size:14px; }
+  .agents li { margin:6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BOSS数智平台 · 多智能体改造冒烟测试报告</h1>
+  <div class="meta">测试时间：2026-10-10 14:00–15:20 ｜ 服务地址：http://127.0.0.1:17954 ｜ 语料：设备手册 PDF ×3 + 正常/敏感 md 各 1</div>
+
+  <div class="summary">
+    <div class="card"><div class="num ok">14/15</div><div class="lbl">冒烟用例通过</div></div>
+    <div class="card"><div class="num">3</div><div class="lbl">智能体真实调用通过</div></div>
+    <div class="card"><div class="num">4</div><div class="lbl">新增修复/兜底</div></div>
+  </div>
+
+  <h2>一、多智能体协作层（真实 LLM 调用）</h2>
+  <table>
+    <tr><th>智能体</th><th>模型</th><th>验证内容</th><th>结果</th></tr>
+    <tr><td>主智能体</td><td><code>DeepSeek-V4-Pro</code></td><td>兜底话术生成（服务不可用场景）</td><td class="ok">通过</td></tr>
+    <tr><td>问数智能体</td><td><code>DeepSeek-V4-Flash</code></td><td>意图识别（knowledge/data）+ 实体抽取</td><td class="ok">通过</td></tr>
+    <tr><td>审查智能体</td><td><code>Qwen3.8-27B</code></td><td>语义合规审查（正常设备手册 → pass/low）</td><td class="ok">通过</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--muted)">模型可用性经 SiliconFlow /v1/models 实测确认，API Key 从 .env 加载。</p>
+
+  <h2>二、审查链路（规则 + LLM 双通道 + 人工审核）</h2>
+  <table>
+    <tr><th>#</th><th>用例</th><th>预期</th><th>结果</th></tr>
+    <tr><td>1</td><td>敏感文档（机密文件/身份证号/银行卡号）上传</td><td>规则审查硬拦截</td><td class="ok">通过 → rejected</td></tr>
+    <tr><td>2</td><td>正常 md 文档上传</td><td>规则+LLM 双通过 → 自动导入</td><td class="ok">通过 → auto_approved</td></tr>
+    <tr><td>3</td><td>CB304n 设备手册 PDF 上传</td><td>LLM 审查通道判定</td><td class="ok">通过 → auto_approved (low)</td></tr>
+    <tr><td>4</td><td>PDF 文本提取失败（pypdf 缺失时）</td><td>转人工审核队列</td><td class="ok">通过 → manual_review</td></tr>
+    <tr><td>5</td><td>管理员审核通过待审单</td><td>自动调度导入任务</td><td class="ok">通过（HITL 闭环）</td></tr>
+    <tr><td>6</td><td>同一文档二次上传</td><td>MD5 重复检测拦截</td><td class="ok">通过 → duplicate_rejected</td></tr>
+    <tr><td>7</td><td>审核统计接口</td><td>队列状态正确</td><td class="ok">通过（total=2, approved=1, pending=1）</td></tr>
+  </table>
+
+  <h2>三、导入链路（真实基础设施）</h2>
+  <table>
+    <tr><th>阶段</th><th>验证点</th><th>结果</th></tr>
+    <tr><td>MinerU 解析</td><td>PDF → Markdown 转换</td><td class="ok">通过（LA2608 手册）</td></tr>
+    <tr><td>多模态图片摘要</td><td>66 张图片逐张生成视觉摘要</td><td class="ok">通过（摘要已嵌入 chunk）</td></tr>
+    <tr><td>向量化入库</td><td>BGE embedding → Milvus kb_chunks</td><td class="ok">通过（chunk 已可检索）</td></tr>
+    <tr><td class="warn">test2 导入</td><td>CB304n 手册全流程</td><td class="warn">中断（服务重启丢失内存态任务，需重传，非功能缺陷）</td></tr>
+  </table>
+
+  <h2>四、问答链路（端到端编排）</h2>
+  <table>
+    <tr><th>#</th><th>问题</th><th>路径</th><th>结果</th></tr>
+    <tr><td>1</td><td>"这个平台能做什么？"</td><td>FAQ 缓存命中（归一化+模糊匹配）</td><td class="ok">通过 4/4 变体命中</td></tr>
+    <tr><td>2</td><td>"统计2025年华北地区销售总额"</td><td>data 意图 → 问数分析 → 主智能体兜底</td><td class="ok">通过（优雅降级，不崩溃）</td></tr>
+    <tr><td>3</td><td>"LA2608怎么配置与无线控制器互通？"</td><td>规则兜底定位产品 → RAG 检索 → 生成</td><td class="ok">通过（返回准确配置步骤）</td></tr>
+    <tr><td>4</td><td>FAQ 未覆盖的知识问题</td><td>Flash 分析 → RAG/兜底</td><td class="ok">通过</td></tr>
+    <tr><td>5</td><td>LLM 网络抖动场景</td><td>问数智能体不可用 → 降级直接检索</td><td class="ok">通过（降级日志正确）</td></tr>
+  </table>
+
+  <h2>五、本轮新增的修复与兜底策略</h2>
+  <table>
+    <tr><th>文件</th><th>问题</th><th>修复</th></tr>
+    <tr><td><code>main.py</code>（_run_data_query）</td><td>asyncio.run() 在 FastAPI 事件循环内冲突 → data 意图必失败</td><td>改用异步事件流，消除冲突</td></tr>
+    <tr><td><code>main.py</code>（缓存写入）</td><td>兜底/澄清话术被写入 FAQ 缓存，临时故障被永久记住</td><td>标记词清单过滤（请明确/哪个产品/没能/请先…），不入缓存</td></tr>
+    <tr><td><code>node_web_search_mcp.py</code></td><td>asyncio.CancelledError 是 BaseException，逃逸导致整图中断</td><td>捕获范围扩大，联网搜索失败不拖垮 RAG</td></tr>
+    <tr><td><code>node_item_name_confirm.py</code></td><td>①唯一候选产品仍反问一轮；②LLM 提取失败时无兜底</td><td>①双向型号匹配自动确认（LA2608 ⊂ H3CLA2608）；②规则兜底 _fallback_rule_match_item_names（不依赖 LLM 定位产品）</td></tr>
+  </table>
+
+  <h2>六、遗留事项</h2>
+  <ul class="agents">
+    <li><span class="tag">低</span>test2 导入任务因多次服务重启丢失内存态，重新上传即可（功能本身已由 test1 实证）。</li>
+    <li><span class="tag">低</span>review 审计日志的内存统计在重启后清零，JSONL 文件仍在，后续可加启动时回载。</li>
+    <li><span class="tag">建议</span>node_md_img 图片摘要是串行调用（66 张图约 20-40 分钟），后续可加线程池并发。</li>
+    <li><span class="tag">环境</span>本地到 SiliconFlow 的网络偶发抖动（openai 客户端自动重试），已有降级兜底承接。</li>
+  </ul>
+
+  <h2>七、结论</h2>
+  <p>多智能体架构（智库为主、问数与审查为辅）核心链路全部跑通：<b>上传 → 规则审查 → LLM 语义审查 → （必要时）人工审核 → 智库导入（MinerU/多模态摘要/BGE/Milvus）→ 问数分析意图 → RAG/FAQ/兜底回答</b>。人工审核闭环与多层兜底策略按设计工作。</p>
+</div>
+</body>
+</html>

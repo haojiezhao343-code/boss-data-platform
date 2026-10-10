@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# 环境配置（含密钥，禁止提交）
+.env
+.env.*
+!.env.example
+
+# 日志与运行时产物
+logs/
+temp-files/
+*.log
+*.out
+
+# 临时文件
+*_check.js
+*.tmp
+~$*
+
+# 冒烟测试大体积样例（PDF 手册数 MB，带外管理；.md 测试用例保留）
+smoke_test/*.pdf
+smoke_test/*.docx
+
+# 上传/解析产生的文档与图片（默认数据目录在项目外，此处兜底）
+data/
+uploads/
+*.pdf
+
+# 大模型二进制（体积原因，单独带外迁移）
+*.bin
+*.safetensors
+*.onnx
+
+# IDE / 工具
+.idea/
+.vscode/
+.workbuddy/
+
+# OS
+.DS_Store
+Thumbs.db

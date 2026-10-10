@@ -1,0 +1,140 @@
+# ============================================================
+# BOSS数智平台 统一编排
+# = data_agent 侧：MySQL(dw+meta) / ES(IK) / Kibana / Qdrant / TEI embedding
+# + knowledge_base 侧：MongoDB / MinIO / etcd / Milvus
+# 注意：本文件位于项目根，data_agent 原 compose 的相对路径已改为 ./docker/...
+# ============================================================
+services:
+
+  # ==================== BOSS问数：MySQL（数仓 dw + 元库 meta）====================
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: itwwy123
+      MYSQL_USER: itwwy
+      MYSQL_PASSWORD: itwwy123
+    ports:
+      - "13306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql:/docker-entrypoint-initdb.d
+    command:
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+
+  # ==================== BOSS问数：Elasticsearch（IK 分词）====================
+  elasticsearch:
+    build: ./docker/elasticsearch
+    container_name: elasticsearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+    ports:
+      - "19200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.19.10
+    container_name: kibana
+    restart: unless-stopped
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  # ==================== BOSS问数：Qdrant ====================
+  qdrant:
+    image: qdrant/qdrant:v1.16
+    container_name: qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"   # HTTP
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  # ==================== BOSS问数：TEI Embedding（bge-large-zh-v1.5）====================
+  embedding:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.8
+    container_name: embedding
+    restart: unless-stopped
+    ports:
+      - "19081:80"
+    environment:
+      MODEL_ID: /models/bge-large-zh-v1.5
+      MAX_CONCURRENT_REQUESTS: "16"
+      MAX_BATCH_TOKENS: "16384"
+    volumes:
+      - ./docker/embedding/bge-large-zh-v1.5:/models/bge-large-zh-v1.5
+
+  # ==================== BOSS智库：MongoDB（会话历史）====================
+  mongodb:
+    image: mongo:7.0
+    container_name: kb-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - kb-mongo-data:/data/db
+    restart: unless-stopped
+
+  # ==================== BOSS智库：MinIO（对象存储，Milvus 依赖）====================
+  minio:
+    image: minio/minio:latest
+    container_name: kb-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - kb-minio-data:/data
+    restart: unless-stopped
+
+  # ==================== BOSS智库：etcd (Milvus dependency) ====================
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.16
+    container_name: kb-etcd
+    environment:
+      ETCD_AUTO_COMPACTION_MODE: revision
+      ETCD_AUTO_COMPACTION_RETENTION: "1000"
+      ETCD_QUOTA_BACKEND_BYTES: "4294967296"
+      ETCD_SNAPSHOT_COUNT: "50000"
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls=http://0.0.0.0:2379 --data-dir /etcd
+    volumes:
+      - kb-etcd-data:/etcd
+    restart: unless-stopped
+
+  # ==================== BOSS智库：Milvus Standalone ====================
+  milvus:
+    image: milvusdb/milvus:v2.5.4
+    container_name: kb-milvus
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    ports:
+      - "19530:19530"  # gRPC
+      - "9091:9091"    # metrics
+    depends_on:
+      - etcd
+      - minio
+    volumes:
+      - kb-milvus-data:/var/lib/milvus
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  es_data:
+  qdrant_data:
+  kb-mongo-data:
+  kb-minio-data:
+  kb-etcd-data:
+  kb-milvus-data:
